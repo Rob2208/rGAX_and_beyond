@@ -116,4 +116,4 @@ tsts_gcm <- lapply(players, function(player,nfold = 5){
 })
 names(tsts_gcm) <- players
 
-saveRDS(tsts_gcm,paste0("data/rqSI/rsqi_ind_tuned_rf_",array_id,"_",date,".rds"))
+saveRDS(tsts_gcm,paste0("data/rqSI/rqsi_ind_tuned_rf_",array_id,"_",date,".rds"))
