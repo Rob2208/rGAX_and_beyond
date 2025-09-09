@@ -121,7 +121,10 @@ From the test result, we can extract $p$-values and the test statistic
 to see that Luis Suárez has a significant positive impact on the
 probability of scoring a goal in our semiparametric framework.  
 With the GCM test result, we are also able to obtain rGAX and the
-correspinding 95% confidence interval.
+correspinding 95% confidence interval. To compute the confidence
+interval, we use the `coin` package (Hothorn et al. 2008), which relies
+on an approximation of the asymptotic permutation distribution, to
+estimate the standard deviation of the test statistic.
 
 ``` r
 rGAX <- sum(GCM_suarez$rY*GCM_suarez$rX)
@@ -144,6 +147,15 @@ ci
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
+
+<div id="ref-Hothorn08coin" class="csl-entry">
+
+Hothorn, Torsten, Kurt Hornik, Mark A. van de Wiel, and Achim Zeileis.
+2008. “Implementing a Class of Permutation Tests: The
+<span class="nocase">coin</span> Package.” *Journal of Statistical
+Software* 28 (8): 1–23. <https://doi.org/10.18637/jss.v028.i08>.
+
+</div>
 
 <div id="ref-kook24comets" class="csl-entry">
 

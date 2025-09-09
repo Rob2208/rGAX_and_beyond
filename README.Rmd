@@ -113,6 +113,9 @@ GCM_suarez
 From the test result, we can extract $p$-values and the test statistic to see that Luis Suárez has a significant 
 positive impact on the probability of scoring a goal in our semiparametric framework.  
 With the GCM test result, we are also able to obtain rGAX and the correspinding 95\% confidence interval.
+To compute the confidence interval, we use the `coin` package [@Hothorn08coin],
+which relies on an approximation of the asymptotic permutation distribution,
+to estimate the standard deviation of the test statistic.
 
 ```{r}
 
