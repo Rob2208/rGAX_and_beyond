@@ -1,6 +1,6 @@
 ######################################################
 ######################################################
-#### Fit xG models for GAX and comets
+#### Fit psxG models for GSAX and comets
 ######################################################
 ######################################################
 
@@ -13,15 +13,15 @@ library(xgboost)
 #### data prep
 ############################
 
-shots <- readRDS("data/shot_data_rel_1516_div_new.rds")
+shots <- readRDS("data/shot_data_psxg_rel_1516.rds")
 
-shots1 <- shots  |>
-  dplyr::select(-player_name_fac,-player_name_GK_fac,-team.name,-opp.team.name,-Att)
+shots1 <- shots |>
+  dplyr::select(-player_name_fac,-player_name_GK_fac,-team.name,-opp.team.name,-Def)
 
 
 tuned_xgb2.1 <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
-                       nfold = 5, nrounds = c(2, 10, 50), verbose = 0,
-                       metrics = list("rmse"), ...) {
+                         nfold = 5, nrounds = c(2, 10, 50), verbose = 0,
+                         metrics = list("rmse"), ...) {
   if (requireNamespace("xgboost")) {
     cvres <- lapply(etas, \(teta) {
       lapply(max_depths, \(tmd) {
@@ -50,10 +50,9 @@ tuned_xgb2.1 <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
 }
 
 
-
 fit_xg_mod <- function(dta,
-                      method = c("tuned_xgb","tuned_rf","glrm"),
-                      ...){
+                       method = c("tuned_xgb","tuned_rf","glrm"),
+                       ...){
   Y <- dta$shot_y
   X <- dta[,-c(grep("shot_y",names(dta)))]
 
@@ -74,8 +73,8 @@ fit_xg_mod <- function(dta,
     #                    nrounds = c(10,50,100,500),
     #                    early_stopping_rounds = 15)
     mod <- tuned_xgb2.1(y = Y, x = Z, objective = "binary:logistic",
-                       metrics = list("logloss"),
-                       ...)
+                              metrics = list("logloss"),
+                              ...)
   }else if(method == "tuned_rf"){
     mod <- comets:::tuned_rf(y = Y,x = Z,
                              mtrys = list(1,2,sqrt(ncol(Z))),...)
@@ -85,6 +84,7 @@ fit_xg_mod <- function(dta,
   return(mod)
 }
 
+
 cat("Start fitting...\n")
 
 
@@ -92,7 +92,6 @@ cat("Start fitting...\n")
 #### xgb
 ############################
 
-set.seed(123)
 
 xgb_svo <- fit_xg_mod(shots1,
                       method = "tuned_xgb",
@@ -100,5 +99,5 @@ xgb_svo <- fit_xg_mod(shots1,
                       nrounds = 1000,
                       max_depths = c(1,3,4,5,7,9),
                       early_stopping_rounds = 50)
-saveRDS(xgb_svo,"data/models/xgb_xg_mod.rds")
+saveRDS(xgb_svo,"data/models/xgb_psxg_mod.rds")
 

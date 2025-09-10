@@ -52,12 +52,8 @@ create_shots1 <- function(shots){
 dta <- create_shots1(shots)
 
 Y <- dta$shot_y
-#X <- dta[,-c(grep("shot_y",names(dta)))]
 X <- dta |> select(-shot_y)
 
-#du <- cbind(Y,X[,-c(grep("player_name_fac",colnames(X)))])
-# du <- cbind(Y,X[,-c(grep("player_name_fac",colnames(X)),
-#                     grep("team_name_fac",colnames(X)))])
 du <- cbind(Y,X[,-c(grep("player_name_fac",colnames(X)),
                     grep("player_name_GK_fac",colnames(X)))])
 
@@ -107,7 +103,7 @@ create_rGAX_table <- function(rd,
   pv <- sapply(l1, \(x) x$p.value)
   ts <- sapply(l1, \(x) x$statistic)
   rGAX <- sapply(l1, \(x) sum(x$rY*x$rX))
-  sds <- sapply(l1, \(x) { #### coin variances. They are smaller than from manual gcm
+  sds <- sapply(l1, \(x) {
     tst <- independence_test(x$rY ~ x$rX, teststat = "scalar")
     sqrt(variance(tst))
   })
@@ -260,7 +256,7 @@ rGAX_v_GAX_plots <- function(ff,
 
   if(sides == "1s"){
     p_95p <- ff |>
-      arrange(tstat) |> ### only that orange dots are more prominently...
+      arrange(tstat) |>
       #mutate(sig = ifelse(pval_gcm <= 0.05,"p <= 0.05","p > 0.05")) |>
       mutate(sig = ifelse(tstat >= critv,"p <= 0.05","p > 0.05"),
              sig_alpha = ifelse(tstat >= critv,0.6,0.8)) |>
@@ -283,7 +279,7 @@ rGAX_v_GAX_plots <- function(ff,
            tag = tag)
   }else{
     p_95p <- ff |>
-      arrange(tstat) |> ### only that orange dots are more prominently...
+      arrange(tstat) |>
       #mutate(sig = ifelse(pval_gcm <= 0.05,"p <= 0.05","p > 0.05")) |>
       mutate(sig = ifelse(abs(tstat) >= critv,"p <= 0.05","p > 0.05"),
              sig_alpha = ifelse(tstat >= critv,0.6,0.8)) |>

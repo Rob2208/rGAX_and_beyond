@@ -1,7 +1,7 @@
 ######################################################
 ######################################################
-#### rGAX and GCM computations
-#### suggested to run on a cluster to high runtime
+#### xG player significances || Cluster version
+#### Goalkeeper analysis via GSAX
 ######################################################
 ######################################################
 
@@ -22,19 +22,18 @@ args <- commandArgs(trailingOnly = TRUE)
 array_id <- if (identical(args, character(0))) -1 else as.numeric(args[1])
 cat("Simulation Setting:", array_id)
 
-
 ############################
 #### Setup
 ############################
 
-date = "130825"
-xreg = "tuned_rf" # tuned_xgb, rf
+date = "140825"
+#xreg = "tuned_rf" # tuned_xgb, rf
 
 ############################
 #### data prep
 ############################
 
-shots <- readRDS("data/shot_data_rel_1516_div_new.rds")
+shots <- readRDS("data/shot_data_psxg_rel_1516.rds")
 
 shot_mm_pl <- model.matrix(~0+player_name_fac,data = shots)
 shot_mm_GK <- model.matrix(~0+player_name_GK_fac,data = shots)
@@ -51,9 +50,13 @@ shots_el <- shots_pre[,-(lsf_col+el_players)]
 # eliminate players with no goals in data
 el_ngp <- which(colSums(shots_el[shots_el$shot_y == 0,-(1:lsf_col)]) == colSums(shots_el[,-(1:lsf_col)]))
 
-shots1 <- shots_el[,-(lsf_col+el_ngp)]
+if(length(el_ngp) == 0){
+  shots1 = shots_el
+}else{
+  shots1 <- shots_el[,-(lsf_col+el_ngp)]
+}
 
-shots1 <- shots1 |> select(-Att)
+shots1 <- shots1 |> select(-Def)
 
 ###############
 ### Define x reg
@@ -96,24 +99,23 @@ tuned_xgb2 <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
 ### Define y reg
 ###############
 
-xg_mod <- readRDS("data/models/xgb_xg_mod.rds")
+psxg_mod <- readRDS("data/models/xgb_psxg_mod.rds")
 
-xG_reg <- function(y,x,xg_mod = NULL,...){
-  out <- xg_mod
-  class_out <- c("xG",class(out))
+psxG_reg <- function(y,x,psxg_mod = NULL,...){
+  out <- psxg_mod
+  class_out <- c("psxG",class(out))
   return(out)
 }
 
-predict.xG <- function(object,data = NULL,...){
+predict.psxG <- function(object,data = NULL,...){
   class(object) <- class(object)[-1]
   predict(object, data, ...)
 }
 
-residuals.xG <- function(object, response = NULL, data = NULL, ...) {
+residuals.psxG <- function(object, response = NULL, data = NULL, ...) {
   preds <- predict(object, data = data, ...)
   .compute_residuals(response, preds)
 }
-
 
 ###############
 ### Fit models
@@ -121,32 +123,22 @@ residuals.xG <- function(object, response = NULL, data = NULL, ...) {
 
 if(array_id < 0){
   #cat("we re in if?")
-  players <- colnames(shots1)[grep("player_name_fac",colnames(shots1))]
+  players <- colnames(shots1)[grep("player_name_GK_fac",colnames(shots1))]
 }else{
   #cat("do we reach else?")
-  players_full <- colnames(shots1)[grep("player_name_fac",colnames(shots1))]
+  players_full <- colnames(shots1)[grep("player_name_GK_fac",colnames(shots1))]
   if(array_id == 1){
     #cat("if so... back to if?")
-    players <- players_full[1:100]
+    players <- players_full[1:30]
   }else{
     #cat("if so... again in else?")
-    s <- (array_id-1)*100+1
-    e <- array_id*100
+    s <- (array_id-1)*30+1
+    e <- array_id*30
     if(e > length(players_full)){
       e <- length(players_full)
     }
     players <- players_full[s:e]
   }
-}
-
-
-if(xreg %in% c("tuned_rf","rf")){
-  args_XonZ <- list(probability = TRUE)
-}else{
-  xreg <- "tuned_xgb2"
-  args_XonZ <- list(metrics = list("logloss"),objective = "binary:logistic",early_stopping_rounds = 15,
-                                    etas = c(0.005,0.01,0.1,0.5,1),nrounds = 1000,
-                    max_depths = c(1,3,4,5,7),folds = xfolds)
 }
 
 
@@ -157,11 +149,11 @@ tsts_gcm <- lapply(players, function(player,nfold = 5){
   target <- shots1[[player]]
   xfolds <- createFolds(target, k = nfold, list = TRUE)
   setTxtProgressBar(pb, which(player == players))
-  test_player(player, "gcm",covs = "svo",reg_YonZ = "xG_reg",reg_XonZ = xreg,
-              args_YonZ = list(xg_mod = xg_mod),
-              args_XonZ = args_XonZ,
-              type = "scalar")
+  test_GK(player, "gcm",covs = "svo",reg_YonZ = "psxG_reg",reg_XonZ = "tuned_rf",
+          args_YonZ = list(psxg_mod = psxg_mod),
+          args_XonZ = list(probability = TRUE),
+          type = "scalar")
 })
 names(tsts_gcm) <- players
 
-saveRDS(tsts_gcm,paste0("data/rGAX/gcm_",array_id,"_",xreg,"_",date,".rds"))
+saveRDS(tsts_gcm,paste0("data/rGSAX/gcm_",array_id,"_tuned_rf_",date,".rds"))
