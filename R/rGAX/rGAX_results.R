@@ -5,7 +5,6 @@
 ######################################################
 
 library(tidyverse)
-library(ggsoccer)
 library(comets)
 library(coin)
 library(latex2exp)
