@@ -13,12 +13,12 @@ This GitHub repository accompanies the arXiv preprint …
 
 - `R` contains relevant R code to reproduce the results of the paper
 
-  - `R/dependencies.R` R script for installing necessary dependencies
-    **TODO!**
-  - `R/rGAX` contains R scripts to obtain rGAX for all players in the
-    data and code to reproduce the figures in the paper
-  - `R/rGSAX` contains R scripts to obtain rGSAX for all players in the
-    data and code to reproduce the figures in the paper
+  - `R/dependencies.R` R script for installing necessary dependencies  
+  - `R/rGAX` contains R scripts to fit an xG model, to obtain rGAX for
+    all players in the data, and to reproduce the figures in the paper
+  - `R/rGSAX` contains R scripts to fit a psxG model, to obtain rGSAX
+    for all players in the data, and to reproduce the figures in the
+    paper
   - `R/rqSI` contains R scripts to obtain rqSI for all players in the
     data and code to reproduce the figures in the paper
   - `R/rCPAE` contains R scripts to obtain rCPAE for all players in the
@@ -26,10 +26,10 @@ This GitHub repository accompanies the arXiv preprint …
 
 ## Reproducing the results
 
-Repruducing all results from the paper requires substantial
+Reproducing all results from the paper requires substantial
 computational effort. The code can be easily run on a server or in
 parallel and is also structured in that way. For only testing the
-procedure (without running the full study) we provide a runable example
+procedure (without running the full study) we provide a code example
 below.
 
 ## Quick code example
@@ -121,7 +121,7 @@ From the test result, we can extract $p$-values and the test statistic
 to see that Luis Suárez has a significant positive impact on the
 probability of scoring a goal in our semiparametric framework.  
 With the GCM test result, we are also able to obtain rGAX and the
-correspinding 95% confidence interval. To compute the confidence
+corresponding 95% confidence interval. To compute the confidence
 interval, we use the `coin` package (Hothorn et al. 2008), which relies
 on an approximation of the asymptotic permutation distribution, to
 estimate the standard deviation of the test statistic.
