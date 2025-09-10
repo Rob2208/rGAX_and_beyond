@@ -5,7 +5,6 @@ set.seed(42)
 
 ### Dependencies
 library("comets")
-library("tram")
 library("survival")
 library("tidyverse")
 library("ggpubr")

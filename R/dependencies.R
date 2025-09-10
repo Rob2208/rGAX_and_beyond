@@ -6,7 +6,9 @@ pkgs <- c(
   "coin",
   "ggpubr",
   "latex2exp",
-  "Cairo"
+  "Cairo",
+  "injurytools",
+  "survival"
 )
 
 install.packages("remotes", repos = "https://cloud.r-project.org")
