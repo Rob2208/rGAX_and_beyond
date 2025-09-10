@@ -1,22 +1,22 @@
 ---
 output: github_document
-bibliography: References.bib 
+bibliography: References.bib
 ---
 
-## Rethinking player evaluation in sports: Goals above expectation and beyond 
+## Rethinking player evaluation in sports: Goals above expectation and beyond
 
-This GitHub repository accompanies the arXiv preprint ... 
+This GitHub repository accompanies the arXiv preprint ...
 
 
 ## Folder structure
 
 - `data` contains all relevant and already preprocessed data for the rGAX, rqSI, rCPAE, and rIAX
 
-  - `models` contains a pre-trained xG model. This model can also be obtained by running the `R/rGAX/fit_xg_mods.R` file 
+  - `models` contains a pre-trained xG model. This model can also be obtained by running the `R/rGAX/fit_xg_mods.R` file
 
 - `R` contains relevant R code to reproduce the results of the paper
 
-  - `R/dependencies.R` R script for installing necessary dependencies  
+  - `R/dependencies.R` R script for installing necessary dependencies
   - `R/rGAX` contains R scripts to fit an xG model, to obtain rGAX for all players in the data, and to reproduce the figures in the paper
   - `R/rGSAX` contains R scripts to fit a psxG model, to obtain rGSAX for all players in the data, and to reproduce the figures in the paper
   - `R/rqSI` contains R scripts to obtain rqSI for all players in the data and code to reproduce the figures in the paper
@@ -25,23 +25,22 @@ This GitHub repository accompanies the arXiv preprint ...
 
 ## Reproducing the results
 
-Reproducing all results from the paper requires substantial computational effort. The code can be easily 
+Reproducing all results from the paper requires substantial computational effort. The code can be easily
 run on a server or in parallel and is also structured in that way. For only testing the procedure (without running
-the full study) we provide a code example below. 
+the full study) we provide a code example below.
 
 
 ## Quick code example
 
-We showcase how to obtain rGAX using the `comets` [@kook24comets] package for the case of Luis Suárez. 
-First, we load and transform the data. 
+We showcase how to obtain rGAX using the `comets` [@kook24comets] package for the case of Luis Suárez.
+First, we load and transform the data.
 
 ```{r, message=FALSE}
-
 ## dependencies
 
-library(tidyverse)
-library(comets)
-library(coin)
+library("tidyverse")
+library("comets")
+library("coin")
 
 ## load data
 
@@ -50,44 +49,30 @@ shots <- readRDS("data/shot_data_rel_1516_div_new.rds")
 ## make column for Suarez
 
 shots <- shots |>
-  mutate(Luis_Suarez = ifelse(player_name_fac == "Luis Alberto Suárez Díaz",1,0))
+  mutate(Luis_Suarez = ifelse(player_name_fac == "Luis Alberto Suárez Díaz", 1, 0))
 
-shots1 <- shots  |>
-  dplyr::select(-player_name_fac,-player_name_GK_fac,-team.name,-opp.team.name,-Att)
-
+shots1 <- shots |>
+  dplyr::select(-player_name_fac, -player_name_GK_fac, -team.name, -opp.team.name, -Att)
 ```
 
 Next to obtain rGAX, we use the GCM test implemented in the `comets` package.
 `comets` allows to define which machine learning model to use for the regressions
-of Y on Z and X on Z. As in the main text, we use a pre-trained xG model for the 
+of Y on Z and X on Z. As in the main text, we use a pre-trained xG model for the
 regression of Y on Z and a tuned random forest for the regression of X on Z. For
-the former, we need to define a suitable regression method, the latter is preimplemented 
+the former, we need to define a suitable regression method, the latter is preimplemented
 in the package. To test for $Y$ independent of $X$ given $Z$, the formula-based
 interface of the `comet` function can be used by providing a formula of the type
 `Y ~ X | Z`.
 
-```{r, warning=FALSE, message=FALSE,results='hide'}
-
+```{r, warning=FALSE, message=FALSE, results='hide'}
 ###############
 ### Define y reg
 ###############
 
 xg_mod <- readRDS("data/models/xgb_xg_mod.rds")
 
-xG_reg <- function(y,x,xg_mod = NULL,...){
-  out <- xg_mod
-  class_out <- c("xG",class(out))
-  return(out)
-}
-
-predict.xG <- function(object,data = NULL,...){
-  class(object) <- class(object)[-1]
-  predict(object, data, ...)
-}
-
-residuals.xG <- function(object, response = NULL, data = NULL, ...) {
-  preds <- predict(object, data = data, ...)
-  .compute_residuals(response, preds)
+xG_reg <- function(y, x, xg_mod = NULL, ...) {
+  structure(xg_mod, class = c("xgb", class(xg_mod)))
 }
 
 ###############
@@ -96,12 +81,11 @@ residuals.xG <- function(object, response = NULL, data = NULL, ...) {
 
 set.seed(123)
 
-GCM_suarez <- comet("shot_y ~ Luis_Suarez | . - Luis_Suarez", data = shots1,
-                    test = "gcm", reg_YonZ = "xG_reg", reg_XonZ = "tuned_rf",
-                    args_YonZ = list(xg_mod = xg_mod), args_XonZ = list(probability = TRUE),
-                    type = "scalar", verbose = 0)
-
-
+GCM_suarez <- comet(shot_y ~ Luis_Suarez | . - Luis_Suarez,
+  data = shots1, test = "gcm", reg_YonZ = "xG_reg", reg_XonZ = "tuned_rf",
+  args_YonZ = list(xg_mod = xg_mod), args_XonZ = list(probability = TRUE),
+  type = "scalar", verbose = 0, coin = TRUE
+)
 ```
 
 
@@ -109,24 +93,21 @@ GCM_suarez <- comet("shot_y ~ Luis_Suarez | . - Luis_Suarez", data = shots1,
 GCM_suarez
 ```
 
-
-From the test result, we can extract $p$-values and the test statistic to see that Luis Suárez has a significant 
-positive impact on the probability of scoring a goal in our semiparametric framework.  
+From the test result, we can extract $p$-values and the test statistic to see that Luis Suárez has a significant
+positive impact on the probability of scoring a goal in our semiparametric framework.
 With the GCM test result, we are also able to obtain rGAX and the corresponding 95\% confidence interval.
 To compute the confidence interval, we use the `coin` package [@Hothorn08coin],
 which relies on an approximation of the asymptotic permutation distribution,
 to estimate the standard deviation of the test statistic.
 
 ```{r}
-
-rGAX <- sum(GCM_suarez$rY*GCM_suarez$rX)
+rGAX <- sum(GCM_suarez$rY * GCM_suarez$rX)
 tst <- independence_test(GCM_suarez$rY ~ GCM_suarez$rX, teststat = "scalar")
 sd <- sqrt(variance(tst))
-ci <- c(rGAX-1.96*sd, rGAX+1.96*sd)
+ci <- c(rGAX - 1.96 * sd, rGAX + 1.96 * sd)
 
 rGAX
 ci
-
 ```
 
 ## References
