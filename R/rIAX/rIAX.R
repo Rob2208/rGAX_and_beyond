@@ -136,6 +136,6 @@ p3 <- ggplot(fres, aes(y = fct_reorder(feature, est), x = est, xmin = lower, xma
 ggarrange(p2 + labs(tag = "A"), p1 + labs(tag = "B"), p3 + labs(tag = "C"),
   nrow = 1, ncol = 3,
   widths = c(0.4, 0.4, 0.3),
-  align = "h"
+  align = "h", common.legend = TRUE
 )
 ggsave(paste0(rYZ, "-riax.pdf"), height = 5, width = 14)
