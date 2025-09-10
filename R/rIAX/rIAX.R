@@ -5,6 +5,7 @@ set.seed(42)
 
 ### Dependencies
 library("comets")
+library("coin")
 library("survival")
 library("tidyverse")
 library("ggpubr")
@@ -36,7 +37,7 @@ tsts <- lapply(seq_along(players), \(idx) {
   setTxtProgressBar(pb, idx)
   dat$pl <- as.numeric(dat$player == players[idx])
   fm <- surv ~ pl | age + height + yellows + position + season
-  comets(fm, data = dat, reg_YonZ = rYZ, reg_XonZ = rXZ, coin = FALSE)
+  comets(fm, data = dat, reg_YonZ = rYZ, reg_XonZ = rXZ, coin = TRUE)
 })
 names(tsts) <- players
 
@@ -44,16 +45,17 @@ names(tsts) <- players
 res <- lapply(seq_along(players), \(idx) {
   RP <- tsts[[idx]]$rY * tsts[[idx]]$rX
   n <- NROW(RP)
-  reax <- mean(RP)
-  eax <- mean(tsts[[idx]]$rY * as.numeric(dat$player == players[idx]))
-  sdx <- sqrt(mean(RP^2) - mean(RP)^2)
+  riax <- sum(RP)
+  iax <- sum(tsts[[idx]]$rY * as.numeric(dat$player == players[idx]))
+  tst <- independence_test(tsts[[idx]]$rY ~ tsts[[idx]]$rX, teststat = "scalar")
+  sdx <- c(sqrt(variance(tst)))
   data.frame(
     player = players[idx],
     p.value = tsts[[idx]]$p.value,
-    est = reax,
-    lower = reax - qnorm(0.975) * sdx / sqrt(n),
-    upper = reax + qnorm(0.975) * sdx / sqrt(n),
-    eax = eax,
+    est = riax,
+    lower = riax - qnorm(0.975) * sdx,
+    upper = riax + qnorm(0.975) * sdx,
+    iax = iax,
     scale = 1 / sdx
   )
 }) |> do.call("rbind", args = _)
@@ -64,7 +66,7 @@ res
 p1 <- ggplot(res, aes(y = fct_reorder(player, est), x = est, xmin = lower, xmax = upper, shape = "rIAX")) +
   geom_errorbarh(height = 0.5) +
   geom_point() +
-  geom_point(aes(x = eax, shape = "IAX"), color = "gray50") +
+  geom_point(aes(x = iax, shape = "IAX"), color = "gray50") +
   theme_bw() +
   geom_vline(xintercept = 0, col = "darkred", linetype = 2) +
   labs(x = "empirical IAX and rIAX", y = element_blank(), shape = "Metric") +
@@ -73,7 +75,7 @@ p1 <- ggplot(res, aes(y = fct_reorder(player, est), x = est, xmin = lower, xmax 
   theme(text = element_text(size = 13.5))
 
 ### Plot IAX vs rIAX
-p2 <- ggplot(res, aes(x = est, y = eax, size = scale, color = p.value <= 0.05)) +
+p2 <- ggplot(res, aes(x = est, y = iax, size = scale, color = p.value <= 0.05)) +
   geom_point(alpha = 0.5) +
   theme_bw() +
   geom_abline(slope = 1, intercept = 0) +
@@ -84,7 +86,7 @@ p2 <- ggplot(res, aes(x = est, y = eax, size = scale, color = p.value <= 0.05)) 
     labels = c("FALSE" = latex2exp::TeX("$> 0.05$"), "TRUE" = latex2exp::TeX("$\\leq 0.05$"))
   ) +
   theme(text = element_text(size = 13.5)) +
-  scale_size_continuous(breaks = c(20, 40, 60))
+  scale_size_continuous()
 
 ### Test each feature
 pb <- txtProgressBar(min = 0, max = length(features), width = 60, style = 3)
@@ -93,29 +95,32 @@ ftsts <- lapply(seq_along(features), \(idx) {
   to_x <- features[idx]
   to_z <- c(features[-idx], "position", "season")
   fm <- as.formula(paste0("surv ~", to_x, "|", paste0(to_z, collapse = "+")))
-  comets(fm, data = dat, reg_YonZ = rYZ, reg_XonZ = rXZ, coin = FALSE)
+  comets(fm, data = dat, reg_YonZ = rYZ, reg_XonZ = rXZ, coin = TRUE)
 })
 names(ftsts) <- features
 
 ### Summarize results
 fres <- lapply(seq_along(features), \(idx) {
-  RP <- ftsts[[idx]]$rY * ftsts[[idx]]$rX
-  apply(cbind(RP), 2, \(col) {
+  rY <- ftsts[[idx]]$rY
+  rX <- ftsts[[idx]]$rX
+  RP <- rY * rX
+  sapply(seq_len(NCOL(RP)), \(idx) {
+    col <- RP[, idx]
     n <- NROW(col)
-    reax <- mean(col)
-    sdx <- sqrt(mean(col^2) - mean(col)^2)
+    riax <- sum(col)
+    tst <- independence_test(rY ~ rX[, idx], teststat = "scalar")
+    sdx <- c(sqrt(variance(tst)))
     data.frame(
-      feature = features[idx],
+      feature = colnames(RP)[idx],
       p.value = ftsts[[idx]]$p.value,
-      est = reax,
-      lower = reax - qnorm(0.975) * sdx / sqrt(n),
-      upper = reax + qnorm(0.975) * sdx / sqrt(n)
+      est = riax,
+      lower = riax - qnorm(0.975) * sdx,
+      upper = riax + qnorm(0.975) * sdx
     )
   }, simplify = FALSE) |> do.call("rbind", args = _)
 }) |>
   do.call("rbind", args = _) |>
-  rownames_to_column() |>
-  mutate(feature = rowname)
+  rownames_to_column()
 
 fres
 
@@ -133,4 +138,4 @@ ggarrange(p2 + labs(tag = "A"), p1 + labs(tag = "B"), p3 + labs(tag = "C"),
   widths = c(0.4, 0.4, 0.3),
   align = "h"
 )
-ggsave(paste0(rYZ, "-reax.pdf"), height = 5, width = 14)
+ggsave(paste0(rYZ, "-riax.pdf"), height = 5, width = 14)
