@@ -1,8 +1,3 @@
----
-output: github_document
-bibliography: References.bib
----
-
 ## Rethinking player evaluation in sports: Goals above expectation and beyond
 
 This GitHub repository accompanies the arXiv preprint ...
