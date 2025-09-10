@@ -115,7 +115,7 @@ tsts_gcm <- lapply(players, function(player,nfold = 5){
   setTxtProgressBar(pb, which(player == players))
   test_player(player, "gcm",reg_YonZ = "tuned_rf",reg_XonZ = "tuned_rf",
               args_XonZ = list(probability = TRUE),
-              type = "scalar")
+              type = "scalar", coin = TRUE)
 })
 names(tsts_gcm) <- players
 

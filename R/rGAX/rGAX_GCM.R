@@ -160,7 +160,7 @@ tsts_gcm <- lapply(players, function(player,nfold = 5){
   test_player(player, "gcm",covs = "svo",reg_YonZ = "xG_reg",reg_XonZ = xreg,
               args_YonZ = list(xg_mod = xg_mod),
               args_XonZ = args_XonZ,
-              type = "scalar")
+              type = "scalar",coin = TRUE)
 })
 names(tsts_gcm) <- players
 
