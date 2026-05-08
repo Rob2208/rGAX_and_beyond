@@ -56,7 +56,7 @@ res <- lapply(seq_along(players), \(idx) {
     lower = riax - qnorm(0.975) * sdx,
     upper = riax + qnorm(0.975) * sdx,
     iax = iax,
-    scale = 1 / sdx
+    precision = 1 / sdx^2
   )
 }) |> do.call("rbind", args = _)
 
@@ -75,8 +75,9 @@ p1 <- ggplot(res, aes(y = fct_reorder(player, est), x = est, xmin = lower, xmax 
   theme(text = element_text(size = 13.5))
 
 ### Plot IAX vs rIAX
-p2 <- ggplot(res, aes(x = est, y = iax, size = scale, color = p.value <= 0.05)) +
+p2 <- ggplot(res, aes(x = est, y = iax, size = precision, color = p.value <= 0.05)) +
   geom_point(alpha = 0.5) +
+  annotate("text", x = 0.5, y = -0.5, label = paste0("R = ", round(cor(res$est, res$iax), 3))) +
   theme_bw() +
   geom_abline(slope = 1, intercept = 0) +
   labs(x = "empirical rIAX", y = "empirical IAX", color = "p-value") +
