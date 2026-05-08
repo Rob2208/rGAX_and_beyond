@@ -112,7 +112,7 @@ tsts_gcm <- lapply(players, function(player,nfold = 5){
   test_player(player, "gcm",reg_YonZ = "tuned_rf",reg_XonZ = "tuned_rf",
               args_YonZ = list(probability = TRUE),
               args_XonZ = list(probability = TRUE),
-              type = "scalar")
+              type = "scalar", coin = TRUE)
 })
 names(tsts_gcm) <- players
 
